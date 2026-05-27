@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unwind and Ponder</title>
+    <style>
+        :root {
+            --card-bg: #ffffff;
+            --text-main: #222222;
+            --text-sub: #666666;
+            --transition-speed: 0.7s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 24px 100px 24px;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .app-bg-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            transition: background var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: none;
+        }
+
+        .app-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 32%;
+            background: rgba(0, 0, 0, 0.12);
+            clip-path: polygon(0 15%, 50% 0, 100% 15%, 100% 100%, 0 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+        }
+
+        .badge-tag {
+            background: rgba(0, 0, 0, 0.25);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 12px;
+            letter-spacing: 1px;
+            backdrop-filter: blur(5px);
+        }
+
+        .card-deck-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            padding-top: 32px;
+            transition: max-width 0.4s ease;
+        }
+
+        @media (min-width: 768px) {
+            .card-deck-container {
+                max-width: 600px;
+            }
+            .card-banner {
+                height: 300px;
+            }
+            .card-title {
+                font-size: 1.8rem !important;
+            }
+            .card-description {
+                font-size: 1.05rem !important;
+            }
+        }
+
+        .card-shadow-layer {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 28px;
+            width: 96%;
+            height: calc(100% - 32px);
+            bottom: 0;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .layer-1 {
+            transform: translateY(-22px) scale(0.96) rotate(-3deg);
+            z-index: 2;
+            opacity: 0.9;
+        }
+        .layer-2 {
+            transform: translateY(-44px) scale(0.92) rotate(4deg);
+            z-index: 1;
+            opacity: 0.75;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-bounce {
+            animation: cardElastic 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .layer-bounce-1 {
+            animation: layerElastic1 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .layer-bounce-2 {
+            animation: layerElastic2 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes cardElastic {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.03); }
+            75% { transform: scale(0.99); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes layerElastic1 {
+            0% { transform: translateY(-22px) scale(0.96) rotate(-3deg); }
+            40% { transform: translateY(-29px) scale(0.98) rotate(-4.5deg); }
+            75% { transform: translateY(-20px) scale(0.95) rotate(-2.5deg); }
+            100% { transform: translateY(-22px) scale(0.96) rotate(-3deg); }
+        }
+
+        @keyframes layerElastic2 {
+            0% { transform: translateY(-44px) scale(0.92) rotate(4deg); }
+            40% { transform: translateY(-54px) scale(0.94) rotate(5.5deg); }
+            75% { transform: translateY(-41px) scale(0.91) rotate(3.5deg); }
+            100% { transform: translateY(-44px) scale(0.92) rotate(4deg); }
+        }
+
+        .flashcard {
+            background: var(--card-bg);
+            border-radius: 28px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 3;
+        }
+
+        /* Responsive Mobile Layout Adjustments */
+        @media (max-width: 767px) {
+            .flashcard {
+                max-height: 72vh;
+                display: flex;
+                flex-direction: column;
+            }
+            .card-banner {
+                height: 125px !important;
+                margin-bottom: 16px !important;
+            }
+            .card-title {
+                margin-bottom: 8px !important;
+            }
+            .card-description {
+                overflow-y: auto !important;
+                flex-grow: 1;
+                margin-bottom: 16px !important;
+                padding-right: 4px;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        .card-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: #222;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .brand-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .brand-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .card-banner {
+            width: 100%;
+            height: 170px;
+            background: #f4f4f4;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+            transition: height 0.3s ease;
+        }
+
+        .banner-graphic {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color var(--transition-speed) ease;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .banner-graphic svg {
+            width: 32px;
+            height: 32px;
+            opacity: 0.85;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .card-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .card-description {
+            font-size: 0.92rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+            margin-bottom: 20px;
+            min-height: 64px;
+            text-align: justify;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            background: #647c72;
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: background 0.3s ease, transform 0.1s ease;
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .toolbar-container {
+            width: 100%;
+            max-width: 1000px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px 20px 0 0;
+            padding: 18px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        @media (max-width: 460px) {
+            .toolbar-container {
+                border-radius: 0;
+                max-width: 100%;
+            }
+        }
+
+        .toolbar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #555;
+            cursor: pointer;
+            flex: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .toolbar-item:active {
+            transform: scale(0.88);
+        }
+
+        .toolbar-item svg {
+            width: 25px;
+            height: 25px;
+            stroke: #0076FF;
+            fill: none;
+        }
+
+        .toolbar-item.violet-accent svg {
+            stroke: #8A2BE2;
+        }
+
+        .toolbar-item.green-accent svg {
+            stroke: #2ECC71;
+        }
+
+        .toolbar-item.orange-accent svg {
+            stroke: #FF5A1F;
+        }
+
+        .toolbar-item.restart-accent svg {
+            stroke: #800000;
+        }
+
+        .custom-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 17, 17, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            color: #fff;
+        }
+
+        .custom-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 16px;
+        }
+
+        .overlay-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .close-overlay-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .overlay-scroll-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .compiled-narrative-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #e0e0e0;
+            text-align: justify;
+        }
+
+        .compiled-narrative-text p {
+            margin-bottom: 20px;
+        }
+
+        .scenic-image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+        }
+
+        .scenic-grid-item {
+            border-radius: 16px;
+            padding: 16px;
+            height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .scenic-item-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .system-toast {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #222;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 200;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .system-toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="app-bg-back" id="bgContainer"></div>
+
+        <div class="card-deck-container">
+            <div class="top-bar">
+                <span class="badge-tag">A Short Story</span>
+            </div>
+
+            <div class="card-shadow-layer layer-2" id="layer2"></div>
+            <div class="card-shadow-layer layer-1" id="layer1"></div>
+            
+            <div class="flashcard" id="mainCard">
+                <div class="card-brand">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24" stroke-width="2.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <div class="brand-name">Bryan Jay M's</div>
+                </div>
+
+                <div class="card-banner">
+                    <div class="banner-graphic" id="cardGraphic">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="9" cy="9" r="2"></circle>
+                            <path d="M21 15l-3.08-3.08a2 2 0 0 0-2.83 0L12 15l-4-4-5 5"></path>
+                        </svg>
+                        <span id="graphicLabel">The Countryside</span>
+                    </div>
+                </div>
+
+                <h2 class="card-title" id="cardTitle">Eddie Boy</h2>
+                <p class="card-description" id="cardDesc">Content narrative details loading...</p>
+
+                <button class="action-btn" id="actionButton" onclick="handleNavigation()">Continue</button>
+            </div>
+        </div>
+
+        <div class="toolbar-container">
+            <div class="toolbar-item violet-accent" onclick="toggleOverlay('textZoomOverlay')">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+            </div>
+            
+            <div class="toolbar-item green-accent" onclick="toggleOverlay('imageZoomOverlay')">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="M21 15l-3.08-3.08a2 2 0 0 0-2.83 0L12 15l-4-4-5 5"></path>
+                </svg>
+            </div>
+
+            <div class="toolbar-item restart-accent" onclick="resetTrack()">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </div>
+            
+            <div class="toolbar-item" onclick="copyAppSystemLink()">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+            </div>
+            
+            <div class="toolbar-item orange-accent" onclick="copyFullNarrativeText()">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-overlay" id="textZoomOverlay">
+        <div class="overlay-header">
+            <span class="overlay-title">Eddie Boy by Bryan Jay M.</span>
+            <button class="close-overlay-btn" onclick="toggleOverlay('textZoomOverlay')">Close</button>
+        </div>
+        <div class="overlay-scroll-body">
+            <div class="compiled-narrative-text" id="compiledStoryOutput"></div>
+        </div>
+    </div>
+
+    <div class="custom-overlay" id="imageZoomOverlay">
+        <div class="overlay-header">
+            <span class="overlay-title">Scenic Asset Gallery</span>
+            <button class="close-overlay-btn" onclick="toggleOverlay('imageZoomOverlay')">Close</button>
+        </div>
+        <div class="overlay-scroll-body">
+            <div class="scenic-image-grid" id="scenicImageGridOutput"></div>
+        </div>
+    </div>
+
+    <div class="system-toast" id="systemToastNode">Notification text placeholder</div>
+
+   <script>
+        const storyDeats = [
+            {
+                desc: "The sunlight was dipping over the fields of steep hills in the countryside, casting long golden shadows across the carabao grass. <br><br> Kione and Rayvel were breathless, sprinting against the wind to keep their makeshift kite. Their kite was a patchwork of plastic bags and bamboo sticks; at first it held steady, but soon it was dunking and diving.",
+                bannerText: "The Countryside",
+                accent: "#166D59",
+                bg: "linear-gradient(180deg, #4FAEC6 0%, #166D59 100%)"
+            },
+            {
+                desc: "'It’s catching! Rayvel, let it out!' Kione yelled, his face split by a manic grin. <br><br> The kite soared, caught in a powerful updraft. As it climbed higher than they’d ever managed, tugging violently at the string. <br><br> Then, an abrupt snap cut through the air. The tension vanished. The kite didn't fall; it started snagging toward the branches, trailing its broken line.",
+                bannerText: "The Ascent",
+                accent: "#35422D",
+                bg: "linear-gradient(180deg, #8FA47B 0%, #35422D 100%)"
+            },
+            {
+                desc: "'The string snapped!' Rayvel shouted, scrambling as the spool unraveled loose. 'We need more lines! Anything!' <br><br> Kione didn't hesitate. In a moment of pure, unthinking adrenaline, he realized the only thing he had on hand was the long, sturdy elastic drawstring he’d recently threaded through his oversized cargo shorts.",
+                bannerText: "The Craft",
+                accent: "#C8A27A",
+                bg: "linear-gradient(180deg, #5D5341 0%, #C8A27A 100%)"
+            },
+            {
+                desc: "'Hold this!' Kione barked, shoving the end of the kite string into Rayvel’s hand. <br><br> With a frantic tug and a series of wet tearing sounds, Kione ripped the garter cord right out of his waistband. <br><br> He tied the elastic to the kite string to give it that extra ten feet of reach, his shorts, deprived of structural support, succumbed to Newton’s law of gravity.",
+                bannerText: "The Turbulent Sky",
+                accent: "#E25822",
+                bg: "linear-gradient(180deg, #FF7F50 0%, #E25822 100%)"
+            },
+            {
+                desc: "They hit his ankles with a soft thud. Regardless, he didn't stop there. He was definitely invincible.<br><br> Rayvel looked over and lost his mind. <br><br> 'Kione! Your...  everything! You're standing in a field... buff!'",
+                bannerText: "The Struggle",
+                accent: "#FF2C2C",
+                bg: "linear-gradient(180deg, #FF2C2C 0%, #800000 100%)"
+            },
+            {
+                desc: "His jaw dropped and laughed frantically. <br><br> 'Priorities, Rayvel! Look at the altitude!'<br><br> Kione countered, desperately hopping around to keep the kite steady while his lower half was completely exposed to the elements.",
+                bannerText: "The Faltering Wing",
+                accent: "#5C2C31",
+                bg: "linear-gradient(180deg, #9C6D75 0%, #5C2C31 100%)"
+            },
+            {
+                desc: "That was the exact moment when a teenage girl stepped out from behind the large narra tree, holding a sketchbook to draw the view. <br><br> She froze. <br><br> Her eyes traveled from the soaring kite, down the makeshift elastic line, to the frantic, pale-legged boy standing in a pile of seemingly khaki fabric. <br><br> The serenity lasted for thirty seconds.",
+                bannerText: "The Resurgence",
+                accent: "#911B51",
+                bg: "linear-gradient(180deg, #FF2A85 0%, #911B51 100%)"
+            },
+            {
+                desc: "She erupted into a laugh so loud it startled the birds. She didn't look away; she pointed directly at Kione's unfortunate little Jun Jun in the midst of the blazing noon. <br><br> 'Jeez! It’s... it’s so Eddie!' she wheezed between gasps for air, doubling over. <br><br> 'The kite is huge, but the pilot is... underwhelming! I gotta sketch it big.'",
+                bannerText: "High Flight",
+                accent: "#2B2638",
+                bg: "linear-gradient(180deg, #A896E6 0%, #2B2638 100%)"
+            },
+            {
+                desc: "Rayvel was collapsed on the grass, howling in laughter. Kione, still clutching the string for his dear life, could only stand there, red-faced and shivering, as his crush saw his little junior. <br><br> She sketched it for fun and later she became the love of his life laughed herself into tears at his expense.",
+                bannerText: "Sailing Steady",
+                accent: "#162238",
+                bg: "linear-gradient(180deg, #3A6CB4 0%, #162238 100%)"
+            },
+            {
+                desc: "Twenty years later, there's a little boy sitting on the porch, watching the narra blooms falling into the ground, and the woman looking down at the young boy sitting by his feet. <br><br> 'And that, Eddie,' she said with a nostalgic smirk, 'is how I met your father.' <br><br> She captured that awkward moment in her sketchbook, and in doing so, she captured the heart of the boy who cared more about the wind rather than his pants.",
+                bannerText: "The Resolution",
+                accent: "#918151",
+                bg: "linear-gradient(180deg, #918151 0%, #A3937B 100%)"
+            }
+        ];
+
+        let currentIndex = 0;
+
+        function initializeAppOverlays() {
+            const storyContainer = document.getElementById('compiledStoryOutput');
+            const gridContainer = document.getElementById('scenicImageGridOutput');
+            
+            let structuredStoryHTML = '';
+            let structuredGridHTML = '';
+
+            storyDeats.forEach((slide) => {
+                structuredStoryHTML += `<p>${slide.desc}</p>`;
+                structuredGridHTML += `
+                    <div class="scenic-grid-item" style="background: ${slide.bg}">
+                        <div class="scenic-item-title">${slide.bannerText}</div>
+                        <div style="font-size:0.75rem; opacity:0.8; font-weight:600;">${slide.accent}</div>
+                    </div>
+                `;
+            });
+
+            storyContainer.innerHTML = structuredStoryHTML;
+            gridContainer.innerHTML = structuredGridHTML;
+        }
+
+        function triggerSystemToast(message) {
+            const toastNode = document.getElementById('systemToastNode');
+            toastNode.textContent = message;
+            toastNode.classList.add('visible');
+            setTimeout(() => {
+                toastNode.classList.remove('visible');
+            }, 2500);
+        }
+
+        function toggleOverlay(overlayId) {
+            const targetOverlay = document.getElementById(overlayId);
+            if(targetOverlay) {
+                targetOverlay.classList.toggle('active');
+            }
+        }
+
+        function copyAppSystemLink() {
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => triggerSystemToast("System dashboard link copied to clipboard!"))
+                .catch(() => triggerSystemToast("Clipboard interaction execution failed."));
+        }
+
+        function copyFullNarrativeText() {
+            const compiledText = storyDeats.map(slide => slide.desc.replace(/<br>/g, '\n')).join('\n\n');
+            navigator.clipboard.writeText(compiledText)
+                .then(() => triggerSystemToast("Full continuous text block copied to clipboard!"))
+                .catch(() => triggerSystemToast("Clipboard text extraction failed."));
+        }
+
+        function updateCardData() {
+            const currentItem = storyDeats[currentIndex];
+            const bgContainer = document.getElementById('bgContainer');
+            const mainCard = document.getElementById('mainCard');
+            const layer1 = document.getElementById('layer1');
+            const layer2 = document.getElementById('layer2');
+            const graphicLabel = document.getElementById('graphicLabel');
+            const cardGraphic = document.getElementById('cardGraphic');
+            const cardDesc = document.getElementById('cardDesc');
+            const actionButton = document.getElementById('actionButton');
+
+            graphicLabel.textContent = currentItem.bannerText;
+            cardGraphic.style.backgroundColor = currentItem.accent;
+            cardDesc.innerHTML = currentItem.desc;
+            actionButton.style.backgroundColor = currentItem.accent;
+            
+            if (currentIndex === storyDeats.length - 1) {
+                actionButton.textContent = "Restart";
+            } else {
+                actionButton.textContent = "Continue";
+            }
+
+            bgContainer.style.background = currentItem.bg;
+
+            mainCard.classList.remove('card-bounce');
+            layer1.classList.remove('layer-bounce-1');
+            layer2.classList.remove('layer-bounce-2');
+            
+            void mainCard.offsetWidth;
+            
+            mainCard.classList.add('card-bounce');
+            layer1.classList.add('layer-bounce-1');
+            layer2.classList.add('layer-bounce-2');
+        }
+
+        function handleNavigation() {
+            if (currentIndex === storyDeats.length - 1) {
+                resetTrack();
+            } else {
+                currentIndex++;
+                updateCardData();
+            }
+        }
+
+        function resetTrack() {
+            currentIndex = 0;
+            updateCardData();
+            triggerSystemToast("Story track sequence restarted.");
+        }
+
+        initializeAppOverlays();
+        updateCardData();
+    </script>
+    
+</body>
+</html>
